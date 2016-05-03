@@ -6,6 +6,7 @@ var User = require('./models/user');
 var Message = require('./models/message');
 
 var app = express();
+var bcrypt = require('bcrypt');
 
 app.use(passport.initialize());
 
@@ -37,10 +38,24 @@ app.post('/users', jsonParser, function(req, res) {
                 message: 'Incorrect field type: username'
             });
         }
-        var user = new User({
-               username: username,
-               password: hash
-           });
+        bcrypt.genSalt(10, function(err, salt) {
+         if (err) {
+             return res.status(500).json({
+                 message: 'Internal server error'
+             });
+         }
+
+         bcrypt.hash(password, salt, function(err, hash) {
+             if (err) {
+                 return res.status(500).json({
+                     message: 'Internal server error'
+                 });
+             }
+
+             var user = new User({
+                 username: username,
+                 password: hash
+             });
 
            user.save().then(function(user) {
                res.location('/users/' + user._id).status(201).json({});
